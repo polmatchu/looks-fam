@@ -306,6 +306,32 @@ kbd { display: inline-block; border: 1px solid var(--border); border-radius: 4px
 </div>
 </div><!-- #app -->
 
+<!-- EDIT QUESTION MODAL -->
+<div id="edit-q-modal-overlay" onclick="closeEditQModalIfBg(event)" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 550; align-items: center; justify-content: center; padding: 20px;">
+  <div style="background: var(--bg); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 520px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 16px;">
+    <h3 style="font-size: 1.05rem; font-weight: 700;">Edit Question</h3>
+    <input type="hidden" id="edit-q-fid">
+    <input type="hidden" id="edit-q-id">
+    
+    <div>
+      <div class="label">Question Text</div>
+      <textarea id="edit-q-text" style="min-height: 80px;"></textarea>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div><div class="label">Option A</div><input type="text" id="edit-q-a"></div>
+      <div><div class="label">Option B</div><input type="text" id="edit-q-b"></div>
+      <div><div class="label">Option C</div><input type="text" id="edit-q-c"></div>
+      <div><div class="label">Option D</div><input type="text" id="edit-q-d"></div>
+    </div>
+    
+    <div class="btn-row" style="justify-content:flex-end; margin-top: 8px;">
+      <button class="btn btn-ghost" onclick="closeEditQModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditedQuestion()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD TEST MODAL -->
 <div id="modal-overlay" onclick="closeModalIfBg(event)">
   <div id="modal-box">
@@ -758,7 +784,10 @@ function renderQEdit(q, i, fid) {
     <div class="q-edit-top">
       <span class="q-edit-num">${i+1}</span>
       <span class="q-edit-text">${escH(q.q)}</span>
-      <button class="q-edit-del" onclick="deleteQuestion(${fid},${q.id})" title="Delete">✕</button>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <button class="btn btn-ghost" style="padding: 2px 8px; font-size: 0.75rem;" onclick="editQuestion(${fid},${q.id})">Edit</button>
+        <button class="q-edit-del" onclick="deleteQuestion(${fid},${q.id})" title="Delete">✕</button>
+      </div>
     </div>
     <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-sub);margin-bottom:4px;">Correct Answer</div>
     <div class="answer-row">${opts}</div>
@@ -788,6 +817,65 @@ function deleteQuestion(fid, qid) {
   if (!t) return;
   t.questions = t.questions.filter(q => q.id !== qid);
   saveDB(db); clearSes(); renderAdminFolders();
+}
+
+// ═══════════════════════════════════════════════════
+//  EDIT QUESTION LOGIC
+// ═══════════════════════════════════════════════════
+function editQuestion(fid, qid) {
+  const db = loadDB();
+  const t = db.tests.find(t => t.id === fid);
+  if (!t) return;
+  const q = t.questions.find(q => q.id === qid);
+  if (!q) return;
+
+  // Populate the hidden fields
+  document.getElementById('edit-q-fid').value = fid;
+  document.getElementById('edit-q-id').value = qid;
+  
+  // Populate the text fields
+  document.getElementById('edit-q-text').value = q.q;
+  q.a.forEach(opt => {
+    const input = document.getElementById('edit-q-' + opt.key.toLowerCase());
+    if (input) input.value = opt.text;
+  });
+
+  document.getElementById('edit-q-modal-overlay').style.display = 'flex';
+}
+
+function closeEditQModal() {
+  document.getElementById('edit-q-modal-overlay').style.display = 'none';
+}
+
+function closeEditQModalIfBg(e) {
+  if (e.target === document.getElementById('edit-q-modal-overlay')) closeEditQModal();
+}
+
+function saveEditedQuestion() {
+  const fid = parseInt(document.getElementById('edit-q-fid').value);
+  const qid = parseInt(document.getElementById('edit-q-id').value);
+  const qText = document.getElementById('edit-q-text').value.trim();
+  
+  if (!qText) { showToast('Question text cannot be empty', 'error'); return; }
+
+  const db = loadDB();
+  const t = db.tests.find(t => t.id === fid);
+  if (!t) return;
+  const q = t.questions.find(q => q.id === qid);
+  if (!q) return;
+
+  // Save the new data
+  q.q = qText;
+  q.a.forEach(opt => {
+    const val = document.getElementById('edit-q-' + opt.key.toLowerCase()).value.trim();
+    opt.text = val;
+  });
+
+  saveDB(db); 
+  clearSes(); 
+  closeEditQModal(); 
+  renderAdminFolders();
+  showToast('✓ Question updated', 'success');
 }
 
 function deleteFolder(fid) {
