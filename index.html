@@ -751,13 +751,13 @@ function renderQEdit(q, i, fid) {
   const opts = q.a.map(opt => `
     <div class="ans-opt ${q.correct===opt.key?'selected':''}" onclick="setCorrect(${fid},${q.id},'${opt.key}')">
       <span class="ans-key">${opt.key}.</span>
-      <span style="flex:1;font-size:0.81rem;">${escH(opt.text.slice(0,55))}${opt.text.length>55?'…':''}</span>
+      <span style="flex:1;font-size:0.81rem;">${escH(opt.text)}</span>
       ${q.correct===opt.key?'<span>✓</span>':''}
     </div>`).join('');
   return `<div class="q-edit-item">
     <div class="q-edit-top">
       <span class="q-edit-num">${i+1}</span>
-      <span class="q-edit-text">${escH(q.q.slice(0,120))}${q.q.length>120?'…':''}</span>
+      <span class="q-edit-text">${escH(q.q)}</span>
       <button class="q-edit-del" onclick="deleteQuestion(${fid},${q.id})" title="Delete">✕</button>
     </div>
     <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-sub);margin-bottom:4px;">Correct Answer</div>
